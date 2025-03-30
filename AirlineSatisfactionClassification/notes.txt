@@ -1,0 +1,57 @@
+Dataset Notes:
+    All numerical value data entries are non-null EXCEPT for 'Arrival Delay in Minutes' which is missing ~400,
+    because the value 0 is appears in many entries for this feature, we cannot assume that the missing values should be 0.
+    because there is so much data, we will remove all entries for which this value is missing
+
+    All category feature values are present for the entire dataset
+
+    Numerical feature skew patterns:
+        Flight Distance: right skewed (50th percentile = 844, mean = 1190.3)
+        Inflight Wifi Service: slight left skew (50th percentile = 3.0, mean = 2.7)
+        Ease of Online Booking: slight left skew (50th percentile = 3.0, mean = 2.75)
+        Food and Drink: slight right skew (50th percentile = 3.0, mean = 3.2)
+        Online boarding: slight right skew (50th percentile = 3.0, mean = 3.25)
+        Seat comfort: left skew (50th percentile = 4.0, mean = 3.4)
+        Inflight entertainment: left skew (50th percentile = 4.0, mean = 3.35)
+        On-board service: left skew (50th percentile = 4.0, mean = 3.38)
+        Leg room service: left skew (50th percentile = 4.0, mean = 3.35)
+        Baggage handling: slight left skew (50th percentile = 4.0, mean = 3.36)
+        Checkin service: slight right skew (50th percentile = 3.0, mean = 3.3)
+        Inflight service: slight left skew (50th percentile = 4.0, mean = 3.6)
+        Cleanliness: slight right skew(50th percentile = 3.0, mean = 3.28)
+        Departure Delay in Minues: strong left skew (50th percentile = 0.0, mean = 14.7)
+        Arrival Delay in Minues: strong left skew (50th percentile = 0.0, mean = 15)
+
+    Categorical Data Value Counts:
+
+        Gender: Female = 65899, Male = 63981 (slight female bias)
+        Customer Type: Loyal Customer = 106100, disloyal Customer = 23780 (strong loyal customer bias)
+        Type of Travel: Business travel = 89693, Personal Travel = 40187 (strong business travel bias)
+        Class: Business = 62160, Eco = 58309, Eco Plus = 9411 (strong business/eco bias)
+        satisfaction: neutral or dissatisfied = 73452, satisfied = 56428 (neutral or dissatisfaction bias)
+
+Feature Descriptions:
+
+    Gender: Gender of the passengers (Female, Male)
+    Customer Type: The customer type (Loyal customer, disloyal customer)
+    Age: The actual age of the passengers
+    Type of Travel: Purpose of the flight of the passengers (Personal Travel, Business Travel)
+    Class: Travel class in the plane of the passengers (Business, Eco, Eco Plus)
+    Flight distance: The flight distance of this journey
+    Inflight wifi service: Satisfaction level of the inflight wifi service (0:Not Applicable;1-5)
+    Departure/Arrival time convenient: Satisfaction level of Departure/Arrival time convenient
+    Ease of Online booking: Satisfaction level of online booking
+    Gate location: Satisfaction level of Gate location
+    Food and drink: Satisfaction level of Food and drink
+    Online boarding: Satisfaction level of online boarding
+    Seat comfort: Satisfaction level of Seat comfort
+    Inflight entertainment: Satisfaction level of inflight entertainment
+    On-board service: Satisfaction level of On-board service
+    Leg room service: Satisfaction level of Leg room service
+    Baggage handling: Satisfaction level of baggage handling
+    Check-in service: Satisfaction level of Check-in service
+    Inflight service: Satisfaction level of inflight service
+    Cleanliness: Satisfaction level of Cleanliness
+    Departure Delay in Minutes: Minutes delayed when departure
+    Arrival Delay in Minutes: Minutes delayed when Arrival
+    Satisfaction: Airline satisfaction level(Satisfaction, neutral or dissatisfaction)
