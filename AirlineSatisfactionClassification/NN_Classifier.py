@@ -4,9 +4,14 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
+from torch import optim
 from torchsummary import summary
 from tqdm import tqdm
+from matplotlib import pyplot
 
+use_cuda = torch.cuda.is_available()
+print(use_cuda)
+quit()
 
 class NN_Classifier(nn.Module):
 
@@ -46,7 +51,7 @@ def train(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs):
             optimizer.zero_grad()
             pred = model(train_X[j])
             loss = criterion(pred, train_Y[j])
-            total_train_acc += (pred[0].round() == train_Y[j])
+            total_train_correct += (pred[0].round() == train_Y[j])
             total_train_loss += loss.item()
             loss.backward()
             optimizer.step()
@@ -56,7 +61,7 @@ def train(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs):
                 val_loss = criterion(val_preds, val_Y)
                 val_acc = (val_preds.round() == val_Y).float().mean()
 
-        print(f'Acc: {total_train_acc/len(train_X)} \
+        print(f'Acc: {total_train_correct/len(train_X)} \
               | Loss: {total_train_loss} \
               | Val Acc: {val_acc} \
               | Val Loss: {val_loss}')
@@ -97,5 +102,12 @@ val_Y = np.array(val_Y)
 test_X = np.array(test_X)
 test_Y = np.array(test_Y)
 
+# Initialize model
+model = NN_Classifier()
 
-#model = NN_Classifier()
+# Hyperparameters
+epochs = 10
+criterion = nn.BCELoss()
+optimizer = optim.Adam(model.parameters)
+
+train(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs)
