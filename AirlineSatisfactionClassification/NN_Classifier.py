@@ -1,5 +1,10 @@
 # NOTE: full_dataset_preprocessed.csv still contains rows with missing values for Arrival Delay in Minutes
 
+# Ignores future warnings
+import warnings
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import numpy as np
 import pandas as pd
 import torch
@@ -43,24 +48,31 @@ def split_X_Y(df):
     X = df.drop('satisfaction', axis=1)
     return X, Y
 
+# Converts all values in df to float32 type for model input
+def convert_to_float(df):
+    for col in df:
+        df[col] = df[col].astype('float32')
+    return df
+
 def train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs):
 
     for i in range(epochs):
         train_preds = []
         total_train_loss = 0
 
-        print(f'============= Epoch {i + 1} =============')
+        print(f'\n============= Epoch {i + 1} =============')
         for j in tqdm(range(len(train_X))):
             # Reset optimizer
             optimizer.zero_grad()
 
             # Convert dataframe value to useable tensor
-            X = torch.tensor(train_X.iloc[j].astype('float32'))
-            Y = torch.tensor([train_Y.iloc[j].astype('float32')])
+            X = torch.tensor(train_X.iloc[j])
+            Y = torch.tensor(train_Y[j])
 
             # Forward pass
             pred = model(X)
             loss = criterion(pred, Y)
+            train_preds.append([pred.item()])
             total_train_loss += loss.item()
 
             # Backward pass and update
@@ -74,22 +86,34 @@ def train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epo
         with torch.no_grad():
             for k in range(len(val_X)):
                 # Convert dataframe value to useable tensor
-                vX = torch.tensor(val_X.iloc[k].astype('float32'))
-                vY = torch.tensor([val_Y.iloc[k].astype('float32')])
-                val_preds = model(vX)
-                val_total_loss += criterion(val_preds, vY).item()
-
-        print(f'Acc: {BinaryAccuracy(train_preds, test_Y)} \
-              | Loss: {total_train_loss/len(train_X)} \
-              | Val Acc: {BinaryAccuracy(val_preds)} \
-              | Val Loss: {val_total_loss/len(val_X)}')
+                vX = torch.tensor(val_X.iloc[k])
+                vY = torch.tensor(val_Y[k])
+                val_pred = model(vX)
+                val_preds.append([val_pred.item()])
+                val_total_loss += criterion(val_pred, vY).item()
+        
+        print(f'Acc: {BinAcc(torch.tensor(train_preds), torch.tensor(train_Y)): .4f} \
+              | Loss: {total_train_loss/len(train_X): .4f} \
+              | Val Acc: {BinAcc(torch.tensor(val_preds), torch.tensor(val_Y)): .4f} \
+              | Val Loss: {val_total_loss/len(val_X): .4f}')
         
 def test_model(model, test_X, test_Y, criterion):
     with torch.no_grad():
-        preds = model(test_X)
-        loss = criterion(preds, test_Y)
-        return {'acc':BinaryAccuracy(preds,test_Y),'loss':(loss/len(test_X)),'f1':BinaryF1Score(preds,test_Y),
-                'prec':BinaryPrecision(preds,test_Y),'rec':BinaryRecall(preds,test_Y)}
+        preds = []
+        total_loss = 0
+        for i in range(len(test_X)):
+            X = torch.tensor(test_X.iloc[i])
+            Y = torch.tensor(test_Y[i])
+
+            pred = model(X)
+            preds.append([pred.item()])
+            total_loss += criterion(pred, Y).item()
+
+        t_preds = torch.tensor(preds)
+        t_Y = torch.tensor(test_Y)
+        return {'acc':BinAcc(t_preds, t_Y),'loss':(total_loss/len(test_X)),
+                'f1':BinF1(t_preds, t_Y),'prec':BinPrec(t_preds, t_Y),
+                'rec':BinRec(t_preds, t_Y)}
 
 
 
@@ -98,14 +122,17 @@ def test_model(model, test_X, test_Y, criterion):
 
 # Only using first 10,026 rows to limit computational expense
 # Ignores id column
-df = pd.read_csv('C:/Users/gbish/VsCodeProjects/cosc467-assignment1/AirlineSatisfactionClassification/CSVs/full_dataset_preprocessed.csv', usecols={'Gender','Customer Type','Age','Type of Travel','Flight Distance','Inflight wifi service',
+df = pd.read_csv('CSVs/full_dataset_preprocessed.csv', usecols={'Gender','Customer Type','Age','Type of Travel','Flight Distance','Inflight wifi service',
                                                                 'Departure/Arrival time convenient','Ease of Online booking','Gate location','Food and drink',
                                                                 'Online boarding','Seat comfort','Inflight entertainment','On-board service','Leg room service',
                                                                 'Baggage handling','Checkin service','Inflight service','Cleanliness','Departure Delay in Minutes',
-                                                                'Arrival Delay in Minutes','satisfaction','Class_Flag_1','Class_Flag_2'}, nrows=100)
+                                                                'Arrival Delay in Minutes','satisfaction','Class_Flag_1','Class_Flag_2'}, nrows=10026)
 
 # Drops columns containing missing values resulting in 10,000 rows containing non-null values
 df.dropna(inplace=True)
+
+# Convert dataframe values to float32
+df = convert_to_float(df)
 
 # Split data into train, validation, and test sets
 train, val, test = split_train_test(df)
@@ -119,13 +146,10 @@ val_X, val_Y = split_X_Y(val)
 test_X, test_Y = split_X_Y(test)
 del train, val, test
 
-# Convert dataframes to numpy arrays
-#train_X = torch.tensor(train_X.astype('double').values)
-#train_Y = torch.tensor(train_Y.astype('double').values)
-#val_X = torch.tensor(val_X.astype('double').values)
-#val_Y = torch.tensor(val_Y.astype('double').values)
-#test_X = torch.tensor(test_X.astype('double').values)
-#test_Y = torch.tensor(test_Y.astype('double').values)
+# Retype and reshape Y sets into numpy array with shape (len(Y), 1)
+train_Y = np.array(train_Y).reshape(len(train_Y),1)
+val_Y = np.array(val_Y).reshape(len(val_Y),1)
+test_Y = np.array(test_Y).reshape(len(test_Y),1)
 
 # Initialize model
 model = NN_Classifier()
@@ -134,10 +158,18 @@ model = NN_Classifier()
 epochs = 10
 criterion = nn.BCELoss()
 optimizer = optim.Adam(model.parameters())
+BinAcc = BinaryAccuracy()
+BinF1 = BinaryF1Score()
+BinRec = BinaryRecall()
+BinPrec = BinaryPrecision()
 
+# Train model
 train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs)
-quit()
+
+# Test model
 metrics = test_model(model, test_X, test_Y, criterion)
+
+# Print test metrics
 acc = metrics['acc']
 f1 = metrics['f1']
 loss = metrics['loss']
@@ -145,8 +177,8 @@ rec = metrics['rec']
 prec = metrics['prec']
 
 print('\n======== Test Metrics ========\n')
-print(f'Accuracy: {acc} \
-        F1 Score: {f1} \
-        Loss: {loss} \
-        Recall: {rec} \
-        Precision: {prec}')
+print(f'Accuracy: {acc: .4f} \
+        F1 Score: {f1: .4f} \
+        Loss: {loss: .4f} \
+        Recall: {rec: .4f} \
+        Precision: {prec: .4f}')
