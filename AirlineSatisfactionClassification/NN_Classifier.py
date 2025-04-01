@@ -5,10 +5,13 @@ import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+import itertools
+
 import numpy as np
 import pandas as pd
 import torch
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
+from sklearn.metrics import confusion_matrix
 from torch import nn, optim
 from torchmetrics.classification import (BinaryAccuracy, BinaryF1Score,
                                          BinaryPrecision, BinaryRecall)
@@ -53,6 +56,30 @@ def convert_to_float(df):
     for col in df:
         df[col] = df[col].astype('float32')
     return df
+
+# Creates and saves prediction confusion matrix
+def plot_confusion_matrix(X, Y):
+    tn, fp, fn, tp = confusion_matrix(Y, X).ravel()
+
+    # [tp, tn]
+    # [fp, fn]
+
+    cm = np.array([[tp,tn],[fp,fn]])
+
+
+    plt.imshow(cm, cmap=plt.cm.Blues)
+    plt.title('NN Confusion Matrix')
+    plt.colorbar()
+    tick_marks = np.arange(2)
+    plt.xticks(tick_marks, ['Positive', 'Negative'])
+    plt.yticks(tick_marks, ['True', 'False'])
+
+    thresh = cm.max() * .8
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])): 
+        plt.text(j, i, cm[i, j], horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
+    
+    plt.tight_layout()
+    plt.savefig('data_graphs/test_confusion_matrix/NN.png')
 
 def train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs):
 
@@ -108,6 +135,9 @@ def test_model(model, test_X, test_Y, criterion):
             pred = model(X)
             preds.append([pred.item()])
             total_loss += criterion(pred, Y).item()
+
+        # Plot and save confusion matrix
+        plot_confusion_matrix(np.round(np.array(preds)), test_Y)
 
         t_preds = torch.tensor(preds)
         t_Y = torch.tensor(test_Y)
