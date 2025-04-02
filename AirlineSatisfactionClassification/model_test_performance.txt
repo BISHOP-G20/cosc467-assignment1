@@ -1,14 +1,27 @@
 NN:
     dataset size - 1,000:
-    dataset size - 10,000:
 
-        Accuracy:  0.9290
-        F1 Score:  0.9132
-        Loss:  0.1711
-        Recall:  0.8882
-        Precision:  0.9396
+        Accuracy:  0.8900
+        F1 Score:  0.8472
+        Loss:  0.3524
+        Recall:  0.8356
+        Precision:  0.8592
+
+    dataset size - 10,000:
         
+        Accuracy:  0.9235
+        F1 Score:  0.9110
+        Loss:  0.2140
+        Recall:  0.9310
+        Precision:  0.8918
+
     dataset size - 100,000:
+
+        Accuracy:  0.9211
+        F1 Score:  0.9166
+        Loss:  0.1804
+        Recall:  0.9780
+        Precision:  0.8624
 
 KNN:
     dataset size - 1,000
