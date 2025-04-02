@@ -58,7 +58,8 @@ def convert_to_float(df):
     return df
 
 # Creates and saves prediction confusion matrix
-def plot_confusion_matrix(X, Y):
+def plot_confusion_matrix(X, Y, title):
+    plt.clf
     tn, fp, fn, tp = confusion_matrix(Y, X).ravel()
 
     # [tp, tn]
@@ -79,9 +80,37 @@ def plot_confusion_matrix(X, Y):
         plt.text(j, i, cm[i, j], horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
     
     plt.tight_layout()
-    plt.savefig('data_graphs/test_confusion_matrix/NN.png')
+    plt.savefig('data_graphs/test_confusion_matrix/' + title.replace(' ', '-').replace(',','') + '.png')
 
-def train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs):
+# Plots training and validation accuracy and loss curves
+def plot_training_metrics(train_accs, train_losses, val_accs, val_losses, title):
+    plt.clf()
+    fig, axs = plt.subplots(2)
+
+    X = np.arange(0,len(train_accs))
+
+    fig.suptitle(title)
+
+    axs[0].plot(X, train_accs)
+    axs[0].plot(X, val_accs, color='red')
+    axs[0].set_xlabel('Epochs')
+    axs[0].set_ylabel('Accuracy')
+    axs[0].legend(['Training','Validation'])
+
+    axs[1].plot(X, train_losses)
+    axs[1].plot(X, val_losses, color='red')
+    axs[1].set_xlabel('Epochs')
+    axs[1].set_ylabel('Loss')
+    axs[1].legend(['Training','Validation'])
+
+    plt.savefig('data_graphs/train_val_plots/' + title.replace(' ', '-').replace(',','') + '.png')
+
+def train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs, title):
+
+    train_accs = []
+    train_losses = []
+    val_accs = []
+    val_losses = []
 
     for i in range(epochs):
         train_preds = []
@@ -109,26 +138,51 @@ def train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epo
         # Storage for validation metrics
         val_preds = []
         val_total_loss = 0
+
         # Validation pass
         with torch.no_grad():
             for k in range(len(val_X)):
+
                 # Convert dataframe value to useable tensor
                 vX = torch.tensor(val_X.iloc[k])
                 vY = torch.tensor(val_Y[k])
+
+                # Make predictions
                 val_pred = model(vX)
+
+                # Store validation metrics
                 val_preds.append([val_pred.item()])
                 val_total_loss += criterion(val_pred, vY).item()
+
+        # Calculate training and validation metrics
+        temp_train_acc = BinAcc(torch.tensor(train_preds), torch.tensor(train_Y))
+        temp_train_loss = total_train_loss/len(train_X)
+        temp_val_acc = BinAcc(torch.tensor(val_preds), torch.tensor(val_Y))
+        temp_val_loss = val_total_loss/len(val_X)
+
+        # Store metrics from epoch in array for plotting
+        train_accs.append(temp_train_acc)
+        train_losses.append(temp_train_loss)
+        val_accs.append(temp_val_acc)
+        val_losses.append(temp_val_loss)
         
-        print(f'Acc: {BinAcc(torch.tensor(train_preds), torch.tensor(train_Y)): .4f} \
-              | Loss: {total_train_loss/len(train_X): .4f} \
-              | Val Acc: {BinAcc(torch.tensor(val_preds), torch.tensor(val_Y)): .4f} \
-              | Val Loss: {val_total_loss/len(val_X): .4f}')
+        # Print metrics to console
+        print(f'Acc: {temp_train_acc: .4f} \
+              | Loss: {temp_train_loss: .4f} \
+              | Val Acc: {temp_val_acc: .4f} \
+              | Val Loss: {temp_val_loss: .4f}')
         
-def test_model(model, test_X, test_Y, criterion):
+        # Delete temporary values
+        del temp_train_acc, temp_train_loss, temp_val_acc, temp_val_loss
+
+    plot_training_metrics(train_accs, train_losses, val_accs, val_losses, title)
+        
+def test_model(model, test_X, test_Y, criterion, title):
     with torch.no_grad():
         preds = []
         total_loss = 0
-        for i in range(len(test_X)):
+        print('\nTESTING')
+        for i in tqdm(range(len(test_X))):
             X = torch.tensor(test_X.iloc[i])
             Y = torch.tensor(test_Y[i])
 
@@ -137,7 +191,7 @@ def test_model(model, test_X, test_Y, criterion):
             total_loss += criterion(pred, Y).item()
 
         # Plot and save confusion matrix
-        plot_confusion_matrix(np.round(np.array(preds)), test_Y)
+        plot_confusion_matrix(np.round(np.array(preds)), test_Y, title)
 
         t_preds = torch.tensor(preds)
         t_Y = torch.tensor(test_Y)
@@ -151,6 +205,8 @@ def test_model(model, test_X, test_Y, criterion):
 #print(summary(model, (1,23)))
 
 # Only using first 10,026 rows to limit computational expense
+#   nrows = 100 -> 100 valid datapoints
+#   nrows = 10,026 -> 10,000 valid datapoints
 # Ignores id column
 df = pd.read_csv('CSVs/full_dataset_preprocessed.csv', usecols={'Gender','Customer Type','Age','Type of Travel','Flight Distance','Inflight wifi service',
                                                                 'Departure/Arrival time convenient','Ease of Online booking','Gate location','Food and drink',
@@ -185,7 +241,7 @@ test_Y = np.array(test_Y).reshape(len(test_Y),1)
 model = NN_Classifier()
 
 # Hyperparameters
-epochs = 10
+epochs = 15
 criterion = nn.BCELoss()
 optimizer = optim.Adam(model.parameters())
 BinAcc = BinaryAccuracy()
@@ -194,10 +250,10 @@ BinRec = BinaryRecall()
 BinPrec = BinaryPrecision()
 
 # Train model
-train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs)
+train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs, 'NN 10,000 Training Metrics')
 
 # Test model
-metrics = test_model(model, test_X, test_Y, criterion)
+metrics = test_model(model, test_X, test_Y, criterion, 'NN 10,000 Confusion Matrix')
 
 # Print test metrics
 acc = metrics['acc']
