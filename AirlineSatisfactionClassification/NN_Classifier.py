@@ -59,7 +59,7 @@ def convert_to_float(df):
 
 # Creates and saves prediction confusion matrix
 def plot_confusion_matrix(X, Y, title):
-    plt.clf
+    plt.clf()
     tn, fp, fn, tp = confusion_matrix(Y, X).ravel()
 
     # [tp, tn]
@@ -204,15 +204,16 @@ def test_model(model, test_X, test_Y, criterion, title):
 # Model summary
 #print(summary(model, (1,23)))
 
-# Only using first 10,026 rows to limit computational expense
+# Only using first nrows to limit computational expense
 #   nrows = 100 -> 100 valid datapoints
+#   nrows = 1,001 -> 1,000 valid datapoints
 #   nrows = 10,026 -> 10,000 valid datapoints
 # Ignores id column
 df = pd.read_csv('CSVs/full_dataset_preprocessed.csv', usecols={'Gender','Customer Type','Age','Type of Travel','Flight Distance','Inflight wifi service',
                                                                 'Departure/Arrival time convenient','Ease of Online booking','Gate location','Food and drink',
                                                                 'Online boarding','Seat comfort','Inflight entertainment','On-board service','Leg room service',
                                                                 'Baggage handling','Checkin service','Inflight service','Cleanliness','Departure Delay in Minutes',
-                                                                'Arrival Delay in Minutes','satisfaction','Class_Flag_1','Class_Flag_2'}, nrows=10026)
+                                                                'Arrival Delay in Minutes','satisfaction','Class_Flag_1','Class_Flag_2'}, nrows=1001)
 
 # Drops columns containing missing values resulting in 10,000 rows containing non-null values
 df.dropna(inplace=True)
@@ -250,10 +251,10 @@ BinRec = BinaryRecall()
 BinPrec = BinaryPrecision()
 
 # Train model
-train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs, 'NN 10,000 Training Metrics')
+train_model(model, train_X, train_Y, val_X, val_Y, criterion, optimizer, epochs, 'NN 1,000 Training Metrics')
 
 # Test model
-metrics = test_model(model, test_X, test_Y, criterion, 'NN 10,000 Confusion Matrix')
+metrics = test_model(model, test_X, test_Y, criterion, 'NN 1,000 Confusion Matrix')
 
 # Print test metrics
 acc = metrics['acc']
