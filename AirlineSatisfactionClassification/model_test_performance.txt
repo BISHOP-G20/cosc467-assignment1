@@ -46,6 +46,25 @@ KNN:
         Precision:  0.9429
         
 KAN:
-    dataset size - 1,000
-    dataset size - 10,000
-    dataset size - 100,000
+    dataset size - 1,000 (steps = 70)
+
+        Accuracy:  0.9100
+        F1 Score:  0.8767
+        Loss:  62.1207
+        Recall:  0.8767
+        Precision:  0.8767
+
+    dataset size - 10,000 (steps = 70)
+
+        Accuracy:  0.8660
+        F1 Score:  0.8603
+        Loss:  5.6925
+        Recall:  0.9810
+        Precision:  0.7660
+
+    dataset size - 100,000 (steps = 70)
+        Accuracy:  0.8916
+        F1 Score:  0.8899
+        Loss:  0.2970
+        Recall:  0.9883
+        Precision:  0.8093
